@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'marketing:create_coupon' %}" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50 me-1"></i> Create New Coupon
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All Coupons</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Discount</th>
+                            <th>Min Purchase</th>
+                            <th>Valid Until</th>
+                            <th>Usage</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coupon in coupons %}
+                        <tr>
+                            <td class="fw-bold text-primary">{{ coupon.code }}</td>
+                            <td>
+                                {% if coupon.discount_type == 'percentage' %}
+                                    {# floatform এর বদলে stringformat ব্যবহার করা হলো #}
+                                    {{ coupon.discount_value|stringformat:".0f" }}%
+                                {% else %}
+                                    ৳{{ coupon.discount_value|intcomma }}
+                                {% endif %}
+                            </td>
+                            <td>{{ coupon.min_purchase_amount|intcomma }}</td>
+                            <td>{{ coupon.valid_to|date:"d M, Y" }}</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {% widthratio coupon.used_count coupon.usage_limit 100 %}%;" 
+                                         aria-valuenow="{{ coupon.used_count }}" aria-valuemin="0" aria-valuemax="{{ coupon.usage_limit }}">
+                                        {{ coupon.used_count }}/{{ coupon.usage_limit }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if coupon.is_valid %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Expired/Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">No coupons found. Create one!</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

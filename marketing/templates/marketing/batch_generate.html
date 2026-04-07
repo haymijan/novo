@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Batch Generate Gift Cards{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Batch Generate Gift Cards</h1>
+        <a href="{% url 'marketing:gift_card_list' %}" class="btn btn-secondary btn-sm shadow-sm">
+            <i class="fas fa-arrow-left fa-sm me-1"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Generate Inactive Cards (Bulk)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning border-left-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> 
+                        Cards generated here will be <strong>INACTIVE</strong> initially. 
+                        They will not affect accounting until activated at the POS during a sale.
+                    </div>
+
+                    <form method="post" action="{% url 'marketing:generate_batch_cards' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="amount" class="form-label font-weight-bold">Card Value (BDT) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">৳</span>
+                                <input type="number" class="form-control" id="amount" name="amount" placeholder="e.g. 1000" required min="1" step="0.01">
+                            </div>
+                            <small class="form-text text-muted">The initial balance for each card in this batch.</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="quantity" class="form-label font-weight-bold">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" placeholder="Number of cards to generate" value="10" required min="1" max="500">
+                            <small class="form-text text-muted">How many cards do you want to print? (Max: 500)</small>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-cogs me-1"></i> Generate Cards
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'marketing:gift_card_list' %}" class="btn btn-secondary btn-sm shadow-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary text-white">
+                    <h6 class="m-0 fw-bold"><i class="fas fa-gift me-2"></i>Issue New Gift Card</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info small">
+                            <i class="fas fa-info-circle me-1"></i> 
+                            A unique 16-digit card code will be generated automatically upon saving.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Initial Balance (Amount)</label>
+                            {{ form.initial_value|as_crispy_field }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Customer (Optional)</label>
+                            {{ form.customer|as_crispy_field }}
+                            <small class="text-muted">Assign to a specific customer or leave empty for general use.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Expiry Date</label>
+                            {{ form.expiry_date|as_crispy_field }}
+                        </div>
+
+                        <hr>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-check-circle me-2"></i> Generate Card
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

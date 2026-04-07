@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .email-container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .gift-card-box {
+            background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%);
+            color: white;
+            padding: 30px;
+            margin: 20px;
+            border-radius: 15px;
+            text-align: center;
+            position: relative;
+        }
+        .amount { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .label { font-size: 14px; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; }
+        .barcode-area {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+            margin-top: 20px;
+        }
+        .code-text {
+            color: #333;
+            font-family: monospace;
+            font-size: 18px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+        .btn { background-color: #2c3e50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 10px;}
+    </style>
+</head>
+<body>
+
+    <div class="email-container">
+        <div style="padding: 30px 20px; text-align: center;">
+            <h2 style="color: #2c3e50; margin-top: 0;">You've received a Gift! 🎁</h2>
+            <p style="color: #666; font-size: 16px;">Dear {{ card.customer.name }},<br>Here is your digital gift card from {{ company_name }}.</p>
+        </div>
+
+        <div class="gift-card-box">
+            <div class="label">Gift Voucher Value</div>
+            <div class="amount">{{ card.initial_value }} TK</div>
+            
+            <p style="margin: 0; opacity: 0.9;">Valid Until: {{ card.expiry_date|date:"d M, Y" }}</p>
+
+            <div class="barcode-area">
+                <img src="cid:barcode_image" alt="Barcode" style="height: 60px; width: auto; display: block; margin: 0 auto;">
+                <span class="code-text">{{ card.code }}</span>
+            </div>
+        </div>
+
+        <div style="padding: 20px; text-align: center;">
+            <p style="color: #555;">To redeem, simply show this email or the barcode above at our checkout counter.</p>
+            <p style="color: #999; font-size: 13px;">💡 Tip: Take a screenshot of the card above to save it to your gallery!</p>
+        </div>
+
+        <div class="footer">
+            &copy; {{ company_name }}. All rights reserved.<br>
+            For support, contact us at support@yourdomain.com
+        </div>
+    </div>
+
+</body>
+</html>

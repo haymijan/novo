@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Gift Card Details | {{ card.code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Gift Card Details</h1>
+        <div>
+            <a href="{% url 'marketing:gift_card_list' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Back to List
+            </a>
+            <a href="{% url 'marketing:print_gift_card' card.pk %}" target="_blank" class="btn btn-dark btn-sm ms-1">
+                <i class="fas fa-print me-1"></i> Print
+            </a>
+            <a href="{% url 'marketing:email_gift_card' card.pk %}" class="btn btn-primary btn-sm ms-1" onclick="return confirm('Send card details via email?')">
+                <i class="fas fa-envelope me-1"></i> Email
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Card Information</h6>
+                    {% if card.is_active and card.current_balance > 0 %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4 p-3 bg-light rounded border">
+                        <h4 class="font-monospace fw-bold text-dark mb-0" style="letter-spacing: 2px;">{{ card.code }}</h4>
+                        <small class="text-muted">Card Number</small>
+                    </div>
+                    
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td class="text-muted ps-0">Current Balance:</td>
+                            <td class="fw-bold text-success text-end fs-4">{{ card.current_balance|intcomma }} TK</td>
+                        </tr>
+                        <tr class="border-bottom">
+                            <td class="text-muted ps-0 pb-3">Initial Value:</td>
+                            <td class="text-end pb-3">{{ card.initial_value|intcomma }} TK</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0 pt-3">Customer:</td>
+                            <td class="text-end pt-3">
+                                {% if card.customer %}
+                                    <a href="{% url 'partners:customer_detail' card.customer.id %}" class="fw-bold text-decoration-none">
+                                        {{ card.customer.name }}
+                                    </a>
+                                    <div class="small text-muted">{{ card.customer.phone }}</div>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">General Card</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Issue Date:</td>
+                            <td class="text-end">{{ card.created_at|date:"M d, Y" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Expiry Date:</td>
+                            <td class="text-end text-danger">{{ card.expiry_date|date:"M d, Y" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Transaction History</h6>
+                </div>
+                <div class="card-body">
+                    {% if card.transactions.exists %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Type</th>
+                                        <th>Reference</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for txn in transactions %}
+                                    <tr>
+                                        <td>
+                                            {{ txn.date|date:"M d, Y" }}<br>
+                                            <small class="text-muted">{{ txn.date|time:"H:i A" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if txn.transaction_type == 'purchase' %}
+                                                <span class="badge bg-danger">Purchase</span>
+                                            {% elif txn.transaction_type == 'reload' %}
+                                                <span class="badge bg-success">Reload</span>
+                                            {% elif txn.transaction_type == 'refund' %}
+                                                <span class="badge bg-info text-dark">Refund</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ txn.get_transaction_type_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="font-monospace small">{{ txn.reference|default:"-" }}</span>
+                                        </td>
+                                        <td class="text-end fw-bold {% if txn.transaction_type == 'purchase' %}text-danger{% else %}text-success{% endif %}">
+                                            {% if txn.transaction_type == 'purchase' %}
+                                                - {{ txn.amount|intcomma }}
+                                            {% else %}
+                                                + {{ txn.amount|intcomma }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-history fa-3x text-gray-300"></i>
+                            </div>
+                            <h6 class="text-muted">No transaction history found</h6>
+                            <p class="small text-muted mb-0">This card has not been used yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

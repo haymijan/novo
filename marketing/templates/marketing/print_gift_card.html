@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gift Card - {{ card.code }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .gift-card {
+            width: 600px;
+            height: 350px;
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+            color: white;
+            padding: 30px;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .card-header { display: flex; justify-content: space-between; align-items: center; }
+        .company-name { font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+        .amount { font-size: 48px; font-weight: bold; margin-top: 40px; }
+        .amount span { font-size: 20px; font-weight: normal; }
+        .barcode-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px 5px 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .code-text { color: black; font-family: monospace; font-size: 18px; letter-spacing: 3px; font-weight: bold; margin-top: 5px; }
+        .footer { position: absolute; bottom: 30px; right: 30px; font-size: 12px; opacity: 0.8; }
+        
+        @media print {
+            body { background: white; height: auto; display: block; }
+            .gift-card { margin: 20px auto; page-break-inside: avoid; -webkit-print-color-adjust: exact; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="position: absolute; top: 20px; text-align: center; width: 100%;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #333; color: white; border: none; border-radius: 5px;">🖨️ Print Card</button>
+    </div>
+
+    <div class="gift-card">
+        <div class="card-header">
+            <div class="company-name">{{ company_name }}</div>
+            <div>GIFT VOUCHER</div>
+        </div>
+        
+        <div class="amount">
+            {{ card.initial_value }} <span>TK</span>
+        </div>
+        
+        <p style="margin-top: 10px; font-size: 14px;">
+            To: {{ card.customer.name|default:"Valued Customer" }}<br>
+            Issue Date: {{ card.created_at|date:"d M, Y" }}
+        </p>
+
+        <div class="barcode-container">
+            <svg id="barcode"></svg>
+            <div class="code-text">{{ card.code }}</div>
+        </div>
+
+        <div class="footer">
+            Terms & Conditions Apply.<br>
+            Expires: {% if card.expiry_date %}{{ card.expiry_date|date:"d M, Y" }}{% else %}Never{% endif %}
+        </div>
+    </div>
+
+    <script>
+        JsBarcode("#barcode", "{{ card.code }}", {
+            format: "CODE128",
+            lineColor: "#000",
+            width: 2,
+            height: 40,
+            displayValue: false
+        });
+    </script>
+</body>
+</html>

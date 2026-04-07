@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        
+        <div>
+            <a href="{% url 'marketing:create_gift_card' %}" class="btn btn-info text-white shadow-sm me-2">
+                <i class="fas fa-gift fa-sm me-1"></i> Issue Gift Card
+            </a>
+
+            <a href="{% url 'marketing:generate_batch_cards' %}" class="btn btn-secondary text-white shadow-sm">
+                <i class="fas fa-layer-group fa-sm me-1"></i> Batch Generate
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Issued Gift Cards</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Card Code</th>
+                            <th>Customer</th>
+                            <th>Initial Value</th>
+                            <th>Current Balance</th>
+                            <th>Expiry Date</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for card in gift_cards %}
+                        <tr>
+                            <td class="font-monospace fw-bold text-primary">{{ card.code }}</td>
+                            <td>
+                                {% if card.customer %}
+                                    <a href="#" class="fw-bold text-decoration-none">{{ card.customer.name }}</a>
+                                    <br><small class="text-muted">{{ card.customer.phone }}</small>
+                                {% else %}
+                                    <span class="text-muted">General / Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ card.initial_value }}</td>
+                            <td class="fw-bold text-success">{{ card.current_balance }}</td>
+                            <td>
+                                {% if card.expiry_date %}
+                                    {{ card.expiry_date|date:"M d, Y" }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">No Expiry</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if card.is_active and card.current_balance > 0 %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif not card.is_active %}
+                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Used / Empty</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{% url 'marketing:print_gift_card' card.pk %}" target="_blank" class="btn btn-sm btn-outline-dark" title="Print Card">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                    
+                                    {% if card.customer %}
+                                    <a href="{% url 'marketing:email_gift_card' card.pk %}" class="btn btn-sm btn-outline-primary" title="Send Email" onclick="return confirm('Send Gift Card via Email?')">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                    {% endif %}
+
+                                    <a href="{% url 'marketing:gift_card_detail' card.pk %}" class="btn btn-sm btn-outline-info" title="View History">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
