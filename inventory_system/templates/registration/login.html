@@ -1,0 +1,215 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - NOVO ERP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
+    <style>
+        :root {
+            --primary-color: #0B57D0;
+            --bg-color: #F0F4F9;
+            --surface-color: #FFFFFF;
+            --text-main: #1F1F1F;
+            --text-muted: #444746;
+            --border-radius: 28px;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background: var(--surface-color);
+            padding: 48px 40px 36px;
+            border-radius: var(--border-radius);
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            body { background-color: var(--surface-color); }
+            .login-card { box-shadow: none; padding: 24px; }
+        }
+
+        .logo-area { margin-bottom: 16px; }
+        .logo-area img { height: 48px; width: auto; }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 24px;
+            font-weight: 500;
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin: 0 0 32px 0;
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 13px 16px;
+            border: 1px solid #747775;
+            border-radius: 4px;
+            font-size: 16px;
+            color: var(--text-main);
+            box-sizing: border-box;
+            border-radius: 8px; /* Modern touch */
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-color);
+            border-width: 2px;
+            outline: none;
+            padding: 12px 15px; /* Adjust for border width */
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            user-select: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 16px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #0842A0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .btn-secondary:hover { background-color: #F0F4F9; }
+
+        .error-message {
+            background-color: #FCE8E6;
+            color: #C5221F;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 24px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-links {
+            margin-top: 40px;
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .footer-links a { text-decoration: none; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-area">
+            {% if company_logo %}
+               <img src="{{ company_logo }}" alt="Logo">
+            {% else %}
+               <img src="{% static 'images/logo.png' %}" alt="Logo">
+            {% endif %}
+        </div>
+        
+        <h1>Sign in</h1>
+        <p class="subtitle">to continue to NOVO ERP</p>
+
+        {% if form.errors %}
+            <div class="error-message">
+                <span class="material-symbols-rounded">error</span>
+                <span>Wrong username or password. Try again.</span>
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="input-group">
+                <input type="text" name="username" class="input-field" placeholder="Username" required autofocus>
+            </div>
+            
+            <div class="input-group">
+                <input type="password" name="password" id="id_password" class="input-field" placeholder="Password" required>
+                <span class="material-symbols-rounded toggle-password" onclick="togglePassword()">visibility</span>
+            </div>
+
+            <button type="submit" class="btn-primary">Sign In</button>
+        </form>
+
+        <a href="{% url 'login_phone' %}" class="btn-secondary" style="display: inline-block; text-decoration: none; margin-top: 15px;">
+            Sign in with mobile number
+        </a>
+
+        <div class="footer-links">
+            <a href="#">Help</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById("id_password");
+            const toggleIcon = document.querySelector(".toggle-password");
+            
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                toggleIcon.textContent = "visibility_off";
+            } else {
+                passwordInput.type = "password";
+                toggleIcon.textContent = "visibility";
+            }
+        }
+    </script>
+</body>
+</html>
