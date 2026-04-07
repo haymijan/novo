@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load crispy_forms_tags %} {% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{% url 'purchase:purchase_return_list' %}" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Back to List</a>
+
+            {% if purchase_return.status != 'pending_approval' and purchase_return.status != 'draft' %}
+            <a href="{% url 'purchase:export_purchase_return_pdf' purchase_return.pk %}" class="btn btn-info btn-sm">
+                <i class="fas fa-file-pdf me-1"></i> Download PDF
+            </a>
+            {% endif %}
+            
+            {% if user.is_superuser and purchase_return.status == 'pending_approval' %}
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" name="approve_return" class="btn btn-success btn-sm"><i class="fas fa-check me-1"></i> Approve Request</button>
+            </form>
+            {% endif %}
+
+            {% if purchase_return.status == 'approved' %}
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" name="ship_return" class="btn btn-primary btn-sm" onclick="return confirm('Are you sure you want to mark this as shipped? This will deduct the stock permanently.')"><i class="fas fa-truck me-1"></i> Mark as Shipped</button>
+            </form>
+            {% endif %}
+            
+            </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3"><strong>Return ID:</strong><p>PR-{{ purchase_return.pk }}</p></div>
+                <div class="col-md-3">
+                    <strong>Status:</strong>
+                    <p><span class="badge 
+                        {% if purchase_return.status == 'draft' %}bg-secondary
+                        {% elif purchase_return.status == 'pending_approval' %}bg-warning text-dark
+                        {% elif purchase_return.status == 'approved' %}bg-info
+                        {% elif purchase_return.status == 'shipped' %}bg-primary
+                        {% elif purchase_return.status == 'waiting_replacement' %}bg-primary
+                        {% elif purchase_return.status == 'completed' %}bg-success
+                        {% elif purchase_return.status == 'rejected' %}bg-danger
+                        {% endif %}">
+                        {{ purchase_return.get_status_display }}
+                    </span></p>
+                </div>
+                <div class="col-md-3"><strong>Branch:</strong><p>{{ purchase_return.warehouse.name }}</p></div>
+                <div class="col-md-3"><strong>Requested By:</strong><p>{{ purchase_return.user.username }} on {{ purchase_return.return_date|date:"d M, Y" }}</p></div>
+                <div class="col-md-6"><strong>Supplier:</strong><p>{{ purchase_return.supplier.name|default:"N/A" }}</p></div>
+                <div class="col-md-6"><strong>Reason:</strong><p>{{ purchase_return.get_return_reason_display }}</p></div>
+                <div class="col-md-6"><strong>Return Type:</strong><p class="fw-bold">{{ purchase_return.get_return_type_display }}</p></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header"><h6 class="m-0 font-weight-bold text-primary">Returned Items (Items Sent)</h6></div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Lot/Serial Sent</th>
+                        {% if user.is_superuser %}<th class="text-end">Cost Price</th>{% endif %}
+                        <th class="text-end">Quantity Sent</th>
+                        {% if user.is_superuser %}<th class="text-end">Total Cost</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in purchase_return.items.all %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.lot_serial.lot_number|default:"N/A" }}</td>
+                        {% if user.is_superuser %}<td class="text-end">{{ item.unit_price|floatformat:2|intcomma }}</td>{% endif %}
+                        <td class="text-end">{{ item.quantity|floatformat:2|intcomma }}</td>
+                        {% if user.is_superuser %}<td class="text-end">{{ item.total_cost|floatformat:2|intcomma }}</td>{% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if purchase_return.status == 'waiting_replacement' %}
+    <div class="card shadow mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h6 class="m-0 font-weight-bold">Receive Exchange Products</h6>
+        </div>
+        <div class="card-body">
+            <p>Please provide details for the new products received from the supplier as an exchange.</p>
+            <form method="post">
+                {% csrf_token %}
+                {{ exchange_formset.management_form }}
+                
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th style="width: 120px;">Qty Received</th>
+                            <th>Destination Location</th>
+                            <th>New Lot/Serial</th>
+                            <th>Expiration Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for form in exchange_formset %}
+                        <tr>
+                            <td>
+                                {{ form.purchase_return_item_id }}
+                                {{ form.product_tracking_method }}
+                                {{ form.product_name }}
+                            </td>
+                            <td>{{ form.quantity_to_receive }}</td>
+                            <td>{{ form.destination_location }}</td>
+                            <td>{{ form.lot_number }}</td>
+                            <td>{{ form.expiration_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                {% if exchange_formset.non_form_errors %}
+                    <div class="alert alert-danger">{{ exchange_formset.non_form_errors }}</div>
+                {% endif %}
+                
+                <button type="submit" name="receive_exchange" class="btn btn-success mt-3" onclick="return confirm('Are you sure you received the replacement product? This will add stock back and complete the return.')">
+                    <i class="fas fa-box-open me-1"></i> Confirm Received Exchange
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    </div>
+{% endblock %}

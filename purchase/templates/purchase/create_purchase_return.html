@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="purchase-return-form">
+        {% csrf_token %}
+
+        <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+            <div>
+                <a href="{% url 'purchase:purchase_return_list' %}" class="btn btn-secondary btn-sm">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-paper-plane me-1"></i> Submit Request
+                </button>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-body">
+                <fieldset class="form-group border p-3 mb-4 rounded">
+                    <legend class="fw-bold fs-5 text-primary">Return Details</legend>
+                    <div class="row">
+                        <div class="col-md-12 mb-3">{{ form.supplier|as_crispy_field }}</div>
+                        <div class="col-md-6 mb-3">{{ form.return_type|as_crispy_field }}</div>
+                        <div class="col-md-6 mb-3">{{ form.return_reason|as_crispy_field }}</div>
+                        <div class="col-md-12 mb-3">{{ form.notes|as_crispy_field }}</div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="form-group border p-3 mb-4 rounded">
+                    <legend class="fw-bold fs-5 text-primary">Items to Return</legend>
+                    {{ formset.management_form }}
+                    <div id="formset-container">
+                        {% for form in formset %}
+                        <div class="formset-row row align-items-center mb-3 p-2 border rounded bg-light">
+                            <div class="col-md-5">{{ form.product|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ form.lot_serial|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.quantity|as_crispy_field }}</div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-form-row" title="Remove Item"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                 
+                    <div id="empty-form" class="d-none">
+                        <div class="formset-row row align-items-center mb-3 p-2 border rounded bg-light">
+                            <div class="col-md-5">{{ formset.empty_form.product|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ formset.empty_form.lot_serial|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ formset.empty_form.quantity|as_crispy_field }}</div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-form-row" title="Remove Item"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-info add-form-row"><i class="fas fa-plus me-1"></i> Add Another Item</button>
+                </fieldset>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    function initializeSelect2(element) {
+        // --- .select2-enabled ক্লাসটি সাপ্লায়ার ফিল্ডকে টার্গেট করবে ---
+        $(element).find('.product-select, .select2-enabled').select2({ 
+            theme: 'bootstrap-5', 
+            placeholder: 'Select an option' 
+        });
+        $(element).find('.lot-select').select2({ 
+            theme: 'bootstrap-5', 
+            placeholder: 'Select a lot' 
+        });
+    }
+
+    // প্রাথমিক লোডের সময় Select2 চালু করা
+    initializeSelect2(document);
+
+    // Product পরিবর্তনের সাথে সাথে Lot/Serial লোড করা
+    $('#formset-container').on('change', '.product-select', function() {
+        const productId = $(this).val();
+        const lotSelect = $(this).closest('.formset-row').find('.lot-select');
+
+        if (productId) {
+            lotSelect.prop('disabled', true).html('<option>Loading lots...</option>');
+            $.ajax({
+                url: "{% url 'purchase:get_lots_for_product_ajax' %}",
+                data: { 'product_id': productId },
+                success: function(data) {
+                    lotSelect.empty().append('<option value="">---------</option>');
+                    if (data.length > 0) {
+                        $.each(data, function(key, value) {
+                            lotSelect.append($('<option>', { value: value.id, text: value.text }));
+                        });
+                    } else {
+                        lotSelect.append('<option value="">No lots in stock</option>');
+                    }
+                    lotSelect.prop('disabled', false);
+                }
+            });
+        } else {
+            lotSelect.empty().append('<option value="">Select Product First</option>');
+        }
+    });
+
+    // Add/Remove Form Row
+    const formsetContainer = $('#formset-container');
+    const totalFormsInput = $('#id_items-TOTAL_FORMS');
+    const emptyFormHtml = $('#empty-form').html().replace(/__prefix__/g, '__prefix__');
+
+    $('.add-form-row').on('click', function() {
+        const formIndex = parseInt(totalFormsInput.val());
+        const newForm = $(emptyFormHtml.replace(/__prefix__/g, formIndex));
+        
+        formsetContainer.append(newForm);
+        initializeSelect2(newForm);
+        totalFormsInput.val(formIndex + 1);
+    });
+
+    formsetContainer.on('click', '.remove-form-row', function() {
+        if (formsetContainer.find('.formset-row').length > 1) {
+            $(this).closest('.formset-row').remove();
+            
+            let totalForms = parseInt(totalFormsInput.val());
+            totalFormsInput.val(totalForms - 1);
+            
+            $('.formset-row').each(function(index) {
+                $(this).find(':input').each(function() {
+                    const name = $(this).attr('name').replace(/-\\d+-/, '-' + index + '-');
+                    const id = 'id_' + name;
+                    $(this).attr({'name': name, 'id': id});
+                });
+            });
+        } else {
+            alert("You must have at least one item.");
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'purchase:create_purchase_return' %}" class="btn btn-primary btn-sm shadow-sm">
+            <i class="fas fa-plus fa-sm me-1"></i> Create New Purchase Return
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Purchase Return List</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Return #</th>
+                            <th>Supplier</th>
+                            <th>Reason</th>
+                            <th>Return Date</th>
+                            <th>Status</th>
+                            <th>Created By</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for return_obj in return_list %}
+                        <tr>
+                            <td>
+                                {# <a href="#">PR-{{ return_obj.pk }}</a> #} {# Details page link will be added later #}
+                                PR-{{ return_obj.pk }}
+                            </td>
+                            <td>{{ return_obj.supplier.name|default:"N/A" }}</td>
+                            <td>{{ return_obj.get_return_reason_display }}</td>
+                            <td>{{ return_obj.return_date|date:"d M, Y" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if return_obj.status == 'draft' %}bg-secondary
+                                    {% elif return_obj.status == 'approved' or return_obj.status == 'completed' %}bg-success
+                                    {% elif return_obj.status == 'rejected' %}bg-danger
+                                    {% else %}bg-warning text-dark{% endif %}">
+                                    {{ return_obj.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ return_obj.user.username|default:"N/A" }}</td>
+                            <td class="text-center">
+                                {# Details button will be added later #}
+                                <a href="{% url 'purchase:purchase_return_detail' return_obj.pk %}" class="btn btn-info btn-sm">Details</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">No purchase returns found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {# Pagination will be added later if needed #}
+        </div>
+    </div>
+</div>
+{% endblock %}
