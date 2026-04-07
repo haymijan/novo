@@ -1,0 +1,221 @@
+/* =========================================
+   1. GEMINI DESIGN SYSTEM TOKENS
+   ========================================= */
+:root {
+    /* Colors */
+    --gem-bg-body: #F0F4F9;
+    --gem-bg-surface: #FFFFFF;
+    --gem-bg-sidebar: #F0F4F9;
+    
+    --gem-primary: #0B57D0;
+    --gem-primary-soft: #D3E3FD;
+    --gem-primary-text: #041E49;
+    
+    --gem-text-main: #1F1F1F;
+    --gem-text-muted: #444746;
+    --gem-border: #E0E3E7;
+    
+    /* Dimensions */
+    --sidebar-width: 280px;
+    --sidebar-collapsed-width: 80px;
+    --radius-lg: 24px;
+}
+
+body {
+    background-color: var(--gem-bg-body);
+    font-family: 'Roboto', 'Outfit', sans-serif;
+    color: var(--gem-text-main);
+    margin: 0;
+    overflow-x: hidden;
+}
+
+/* GLOBAL RESET FOR LISTS (Fixes Extra Dots) */
+ul, li {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* =========================================
+   2. SIDEBAR STYLES
+   ========================================= */
+.sidebar-nav {
+    width: var(--sidebar-width);
+    background-color: var(--gem-bg-sidebar);
+    height: 100vh;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    transition: width 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s ease;
+}
+
+/* Header */
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px 24px 12px;
+    gap: 12px;
+    height: 72px; /* Fixed height */
+}
+
+/* Toggle Button (Circular Fix) */
+.btn-menu-toggle {
+    width: 44px; 
+    height: 44px;
+    min-width: 44px; /* Force width */
+    border-radius: 50% !important; /* Perfect Circle */
+    border: none;
+    background: transparent;
+    color: var(--gem-text-muted);
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    padding: 0;
+}
+.btn-menu-toggle:hover { background-color: rgba(0,0,0,0.08); }
+.btn-menu-toggle .material-symbols-rounded { font-size: 26px; }
+
+/* Logo */
+.brand-logo {
+    display: block;
+    transition: opacity 0.2s, width 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+}
+.brand-logo img { height: 28px; width: auto; }
+
+/* Menu Items */
+.sidebar-content { flex: 1; overflow-y: auto; padding-right: 5px; }
+.sidebar-content::-webkit-scrollbar { width: 4px; }
+.sidebar-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+.sidebar-menu a {
+    display: flex; align-items: center;
+    padding: 12px 16px;
+    border-radius: 50px;
+    color: var(--gem-text-muted);
+    font-weight: 500;
+    transition: all 0.2s ease;
+    gap: 16px; font-size: 0.95rem; text-decoration: none; margin-bottom: 4px;
+}
+.sidebar-menu a:hover { background-color: rgba(0,0,0,0.05); color: var(--gem-text-main); }
+.sidebar-menu a.active { background-color: var(--gem-primary-soft); color: var(--gem-primary-text); }
+.sidebar-menu a.active .material-symbols-rounded { font-variation-settings: 'FILL' 1; }
+
+.menu-label {
+    font-size: 0.75rem; font-weight: 600; color: #6E7278;
+    margin: 24px 0 8px 16px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* New Action Button */
+.btn-new-action {
+    background-color: var(--gem-bg-surface) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    color: var(--gem-text-main) !important;
+    border-radius: 16px !important;
+    padding: 14px 20px !important;
+}
+
+/* Footer (Profile) */
+.user-profile a { padding: 8px 12px; border-radius: 50px; gap: 12px; }
+.user-profile img { width: 36px; height: 36px; border-radius: 50%; }
+.user-info { display: flex; flex-direction: column; line-height: 1.2; }
+.user-name { font-weight: 600; font-size: 0.9rem; }
+.user-role { font-size: 0.75rem; color: #666; }
+
+/* =========================================
+   3. COLLAPSED STATE
+   ========================================= */
+body.sidebar-collapsed .sidebar-nav { width: var(--sidebar-collapsed-width); }
+body.sidebar-collapsed .main-content-wrapper { margin-left: var(--sidebar-collapsed-width); }
+
+/* Hide Logo & Text when collapsed */
+body.sidebar-collapsed .brand-logo,
+body.sidebar-collapsed .menu-label,
+body.sidebar-collapsed .sidebar-menu a span:last-child,
+body.sidebar-collapsed .user-info,
+body.sidebar-collapsed .collapse {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.sidebar-collapsed .sidebar-header { justify-content: center; padding: 0; }
+body.sidebar-collapsed .btn-menu-toggle { margin: 0 auto; }
+body.sidebar-collapsed .sidebar-menu a { justify-content: center; padding: 10px 0; width: 48px; height: 48px; margin: 0 auto 4px; border-radius: 50%; }
+body.sidebar-collapsed .btn-new-action { width: 48px; height: 48px; padding: 0 !important; border-radius: 14px !important; }
+
+/* =========================================
+   4. MOBILE STYLES
+   ========================================= */
+.sidebar-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 999;
+    display: none; opacity: 0; transition: opacity 0.3s;
+}
+.sidebar-overlay.show { display: block; opacity: 1; }
+
+@media (max-width: 768px) {
+    .sidebar-nav {
+        transform: translateX(-100%);
+        width: 280px !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    .sidebar-nav.mobile-open { transform: translateX(0); }
+    .main-content-wrapper { margin-left: 0 !important; padding: 0; }
+    
+    /* Mobile Header Fixes */
+    .btn-menu-toggle { display: none !important; } /* Hide internal toggle on mobile */
+    .brand-logo { display: block !important; margin: 0 auto; }
+}
+
+/* =========================================
+   5. UI COMPONENTS
+   ========================================= */
+.main-content-wrapper {
+    flex: 1; margin-left: var(--sidebar-width);
+    padding: 20px; transition: margin-left 0.3s cubic-bezier(0.2, 0, 0, 1);
+    max-width: 1600px; margin-right: auto;
+}
+.card {
+    background: var(--gem-bg-surface); border: none;
+    border-radius: var(--radius-lg); box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.hover-elevate:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); transition: all 0.2s; }
+
+/* Filter Bar Specific */
+.filter-bar-wrapper {
+    background: #FFFFFF;
+    border-radius: 50px;
+    padding: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: inline-flex;
+    align-items: center;
+}
+
+/* =========================================
+   Product List Image Zoom Effect
+   ========================================= */
+.product-list-img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smooth Bounce Effect */
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+
+.product-list-img:hover {
+    transform: scale(3.5);
+    z-index: 1000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+    border: 2px solid #fff;
+    border-radius: 8px;
+}

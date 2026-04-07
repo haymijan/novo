@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-edit me-2"></i>{{ title }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="card-text text-muted">
+                        Use this form to correct the stock quantity for a specific product lot after a physical count.
+                    </p>
+                    <hr>
+                    <form method="post" id="adjustment-form" novalidate>
+                        {% csrf_token %}
+                        
+                        <fieldset class="border p-3 rounded mb-4">
+                            <legend class="fw-bold w-auto px-2 fs-6 text-primary">Selection Criteria</legend>
+                            <div class="mb-3" id="warehouse-wrapper">
+                                {{ form.warehouse|as_crispy_field }}
+                            </div>
+                            <div class="mb-3" id="product-wrapper">
+                                {{ form.product|as_crispy_field }}
+                            </div>
+                            <div class="mb-3" id="lot-wrapper">
+                                {{ form.lot|as_crispy_field }}
+                            </div>
+                        </fieldset>
+
+                        <fieldset class="border p-3 rounded">
+                             <legend class="fw-bold w-auto px-2 fs-6 text-primary">Adjust Quantity</legend>
+                            <div class="mb-3" id="quantity-wrapper">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        {{ form.new_quantity|as_crispy_field }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <p class="form-control-plaintext text-muted fw-bold" id="current-quantity-display"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        
+                        <div class="mt-4 d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Adjust Stock</button>
+                            <a href="{% url 'stock:lot_serial_list' %}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Select2 ইনিশিয়ালাইজেশন
+    $('.select2-field').select2({
+        theme: 'bootstrap-5',
+        placeholder: function(){
+            $(this).data('placeholder');
+        }
+    });
+
+    const warehouseSelect = $('#id_warehouse');
+    const productSelect = $('#id_product');
+    const lotSelect = $('#id_lot');
+
+    const productsUrl = "{% url 'stock:ajax_get_products_by_warehouse' %}";
+    const lotsUrl = "{% url 'stock:ajax_get_lots_by_product' %}";
+
+    productSelect.prop('disabled', true);
+    lotSelect.prop('disabled', true);
+
+    warehouseSelect.on('change', function() {
+        const warehouseId = $(this).val();
+        
+        productSelect.empty().append('<option value=""></option>').prop('disabled', true).trigger('change');
+        productSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: warehouseId ? 'Loading products...' : 'First select a branch'
+        });
+        lotSelect.empty().append('<option value=""></option>').prop('disabled', true).trigger('change');
+        lotSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: 'First select a product'
+        });
+        $('#current-quantity-display').text('');
+
+        if (warehouseId) {
+            $.ajax({
+                url: productsUrl,
+                data: { 'warehouse_id': warehouseId },
+                success: function(data) {
+                    productSelect.prop('disabled', false);
+                    $.each(data.products, function(key, value) {
+                        productSelect.append($('<option>', {
+                            value: value.id,
+                            text: value.text
+                        }));
+                    });
+                    productSelect.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: 'Search and select a product'
+                    });
+                }
+            });
+        }
+    });
+
+    productSelect.on('change', function() {
+        const productId = $(this).val();
+        const warehouseId = warehouseSelect.val();
+
+        lotSelect.empty().append('<option value=""></option>').prop('disabled', true).trigger('change');
+         lotSelect.select2({
+            theme: 'bootstrap-5',
+            placeholder: productId ? 'Loading lots...' : 'First select a product'
+        });
+        $('#current-quantity-display').text('');
+
+        if (productId && warehouseId) {
+            $.ajax({
+                url: lotsUrl,
+                data: { 
+                    'product_id': productId,
+                    'warehouse_id': warehouseId 
+                },
+                success: function(data) {
+                    lotSelect.prop('disabled', false);
+                    $.each(data.lots, function(key, value) {
+                        const optionText = value.text;
+                        const qtyMatch = optionText.match(/Qty: ([\d.]+)/);
+                        const currentQty = qtyMatch ? qtyMatch[1] : '0';
+
+                        lotSelect.append($('<option>', {
+                            value: value.id,
+                            text: optionText,
+                            'data-current-quantity': currentQty
+                        }));
+                    });
+                    lotSelect.select2({
+                        theme: 'bootstrap-5',
+                        placeholder: 'Search and select a lot/batch'
+                    });
+                }
+            });
+        }
+    });
+
+    lotSelect.on('change', function() {
+        const selectedOption = $(this).find('option:selected');
+        const currentQty = selectedOption.data('current-quantity');
+        
+        if (currentQty) {
+            $('#current-quantity-display').text(`(Current Stock: ${currentQty})`);
+        } else {
+            $('#current-quantity-display').text('');
+        }
+    });
+});
+</script>
+{% endblock %}
