@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'sales:sales_order_detail' sales_order_form.instance.pk %}" class="btn btn-secondary btn-sm">Back to Order</a>
+    </div>
+
+    <form method="post" id="edit-sales-order-form">
+        {% csrf_token %}
+        
+        {% if sales_order_form.non_field_errors %}
+            <div class="alert alert-danger shadow-sm">{{ sales_order_form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="card shadow mb-4">
+            <div class="card-body p-4">
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Customer</label>
+                        {{ sales_order_form.customer }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Warehouse</label>
+                        {{ sales_order_form.warehouse }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Order Date</label>
+                        {{ sales_order_form.order_date }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Status</label>
+                        {{ sales_order_form.status }}
+                    </div>
+                </div>
+                
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Notes</label>
+                        {{ sales_order_form.notes }}
+                    </div>
+                </div>
+
+                <hr>
+
+                <h5 class="fw-bold mb-3">Order Items</h5>
+                <div class="table-responsive border rounded mb-3">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="min-width: 250px;">Product</th>
+                                <th class="text-center" style="width: 120px;">Qty</th>
+                                <th class="text-end" style="width: 150px;">Unit Price</th>
+                                <th class="text-end" style="width: 150px;">Total</th>
+                                <th class="text-center" style="width: 60px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-container">
+                            {{ formset.management_form }}
+                            {% for form in formset %}
+                                <tr class="formset-row">
+                                    <td>
+                                        {{ form.id }}
+                                        {{ form.product }}
+                                        {% if form.product.errors %}<div class="text-danger small">{{ form.product.errors }}</div>{% endif %}
+                                    </td>
+                                    <td>{{ form.quantity }}</td>
+                                    <td>{{ form.unit_price }}</td>
+                                    <td><input type="text" class="form-control text-end fw-bold bg-white border-0 subtotal-display" readonly value="0.00"></td>
+                                    <td class="text-center">
+                                        {% if formset.can_delete %}
+                                            <div class="d-none">{{ form.DELETE }}</div>
+                                        {% endif %}
+                                        <button type="button" class="btn btn-light text-danger btn-sm border-0 remove-form-row"><i class="fas fa-trash-alt"></i></button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <button type="button" class="btn btn-primary btn-sm add-form-row mb-4"><i class="fas fa-plus"></i> Add Item</button>
+
+                <table class="d-none" id="empty-form">
+                    <tr class="formset-row">
+                        <td>{{ formset.empty_form.id }}{{ formset.empty_form.product }}</td>
+                        <td>{{ formset.empty_form.quantity }}</td>
+                        <td>{{ formset.empty_form.unit_price }}</td>
+                        <td><input type="text" class="form-control text-end fw-bold bg-white border-0 subtotal-display" readonly value="0.00"></td>
+                        <td class="text-center"><button type="button" class="btn btn-light text-danger btn-sm border-0 remove-form-row"><i class="fas fa-trash-alt"></i></button></td>
+                    </tr>
+                </table>
+
+                <div class="row justify-content-end">
+                    <div class="col-md-5 col-lg-4">
+                        <div class="card bg-light border-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold">Subtotal:</span>
+                                    <span id="sub-total-display" class="fw-bold">0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Tax (+):</span>
+                                    <div style="width: 100px;">{{ sales_order_form.tax_amount }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Shipping (+):</span>
+                                    <div style="width: 100px;">{{ sales_order_form.shipping_cost }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span>Discount (-):</span>
+                                    <div style="width: 100px;">{{ sales_order_form.discount }}</div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span>Round Off (-):</span>
+                                    <div style="width: 100px;">{{ sales_order_form.round_off_amount }}</div>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="fw-bold m-0">Total:</h5>
+                                    <h5 class="fw-bold text-success m-0" id="grand-total">0.00</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mt-4">
+                    <button type="submit" class="btn btn-success px-4 fw-bold"><i class="fas fa-save me-1"></i> Update Order</button>
+                </div>
+
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// (Copy the SAME script from create_sales_order.html here)
+// অথবা একটি কমন JS ফাইল বানিয়ে লিঙ্ক করে দিন।
+// সংক্ষেপে এখানেও একই লজিক কাজ করবে:
+$(document).ready(function() {
+    const getProductSalePriceUrl = "{% url 'sales:get_product_sale_price' %}";
+    const formsetContainer = $('#formset-container');
+    const discountInput = $('#id_discount'); 
+    const roundOffInput = $('#id_round_off_amount');
+    const taxInput = $('#id_tax_amount');
+    const shippingInput = $('#id_shipping_cost');
+
+    function initializeProductSelect2(element) {
+        $(element).find('select[name$="-product"]').select2({ placeholder: "Search Product", width: '100%' });
+    }
+    
+    // ... (Add/Remove Row & Ajax Logic same as Create Page) ...
+
+    function updateTotals() {
+        let subTotal = 0;
+        formsetContainer.find('.formset-row').each(function() {
+            if ($(this).is(':visible')) {
+                const quantity = parseFloat($(this).find('input[name$="-quantity"]').val()) || 0;
+                const unitPrice = parseFloat($(this).find('input[name$="-unit_price"]').val()) || 0;
+                const lineTotal = quantity * unitPrice;
+                subTotal += lineTotal;
+                $(this).find('.subtotal-display').val(lineTotal.toFixed(2));
+            }
+        });
+
+        let discountVal = parseFloat(discountInput.val()) || 0;
+        let roundOffVal = parseFloat(roundOffInput.val()) || 0;
+        let taxVal = parseFloat(taxInput.val()) || 0;
+        let shippingVal = parseFloat(shippingInput.val()) || 0;
+
+        const netTotal = Math.max(0, (subTotal + taxVal + shippingVal) - discountVal - roundOffVal);
+
+        $('#sub-total-display').text(subTotal.toFixed(2));
+        $('#grand-total').text(netTotal.toFixed(2));
+    }
+
+    // Bind Events
+    formsetContainer.find('.formset-row').each(function() { initializeProductSelect2(this); });
+    
+    // ... (Attach row events logic here) ...
+    
+    discountInput.on('change keyup input', updateTotals);
+    roundOffInput.on('change keyup input', updateTotals);
+    taxInput.on('change keyup input', updateTotals);
+    shippingInput.on('change keyup input', updateTotals);
+    
+    // Initial Calc
+    updateTotals();
+    
+    // Add Row Click Event (Same as Create Page)
+    $('.add-form-row').on('click', function() {
+        // ... same logic ...
+        // Note: Copy full logic from create page
+    });
+});
+</script>
+{% endblock %}

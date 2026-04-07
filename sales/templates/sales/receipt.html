@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Receipt for Order SO-{{ order.id }}</title>
+    </head>
+<body>
+    <div class="receipt-container">
+        <div class="header">
+            <h3>{{ order.warehouse.name|default:"Company Name" }}</h3>
+            <p>Order #: SO-{{ order.sales_order_number }}</p>
+            <p>Date: {{ order.order_date|date:"d/m/Y h:i A" }}</p>
+        </div>
+
+        <table class="item-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th style="text-align: center;">Qty</th>
+                    <th style="text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td style="text-align: center;">{{ item.quantity }}</td>
+                    <td style="text-align: right;">{{ DEFAULT_CURRENCY_SYMBOL }}{{ item.subtotal|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            {% if order.tax_amount > 0 %}
+            <div class="totals-row">
+                <span>Tax:</span>
+                <span>{{ DEFAULT_CURRENCY_SYMBOL }}{{ order.tax_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            {% if order.shipping_cost > 0 %}
+            <div class="totals-row">
+                <span>Shipping:</span>
+                <span>{{ DEFAULT_CURRENCY_SYMBOL }}{{ order.shipping_cost|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            {% if order.discount > 0 %}
+            <div class="totals-row">
+                <span>Discount:</span>
+                <span>- {{ DEFAULT_CURRENCY_SYMBOL }}{{ order.discount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+
+            <div class="totals-row" style="margin-top: 10px; border-top: 1px solid #000; padding-top: 5px;">
+                <h3 style="margin: 0;">Total:</h3>
+                <h3 style="margin: 0;">{{ DEFAULT_CURRENCY_SYMBOL }}{{ order.total_amount|floatformat:2 }}</h3>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Thank you!</p>
+        </div>
+    </div>
+    
+    <script>
+        window.print();
+    </script>
+</body>
+</html>

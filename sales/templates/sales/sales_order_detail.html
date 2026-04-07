@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <div>
+            {# --- ACTION BUTTONS BASED ON STATUS --- #}
+            
+            {# 1. Confirm Order (Only for Draft) #}
+            {% if sales_order.status == 'draft' %}
+                {% if perms.sales.change_salesorder %}
+                <a href="{% url 'sales:edit_sales_order' sales_order.pk %}" class="btn btn-warning btn-sm shadow-sm me-2">
+                    <i class="fas fa-edit"></i> Edit Draft
+                </a>
+                <a href="{% url 'sales:confirm_sales_order' sales_order.pk %}" class="btn btn-primary btn-sm shadow-sm me-2" onclick="return confirm('Are you sure you want to confirm this order? Stock will be reserved.');">
+                    <i class="fas fa-check-circle"></i> Confirm Order
+                </a>
+                {% endif %}
+            {% endif %}
+
+            {# 2. Add Payment (For Confirmed/Partial/Delivered) #}
+            {% if sales_order.status == 'confirmed' or sales_order.status == 'partially_delivered' or sales_order.status == 'processing' or sales_order.status == 'out_for_delivery' or sales_order.status == 'delivered' %}
+                {% if sales_order.payment_status != 'paid' %}
+                <button type="button" class="btn btn-info btn-sm text-white shadow-sm me-2" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                    <i class="fas fa-money-bill-wave"></i> Add Payment
+                </button>
+                {% endif %}
+            {% endif %}
+
+            {# 3. Fulfill Order (For Confirmed/Processing) #}
+            {% if sales_order.status == 'confirmed' or sales_order.status == 'partially_delivered' or sales_order.status == 'processing' %}
+                <a href="{% url 'sales:fulfill_sales_order' sales_order.pk %}" class="btn btn-success btn-sm shadow-sm me-2">
+                    <i class="fas fa-shipping-fast"></i> Fulfill / Ship
+                </a>
+            {% endif %}
+
+            {# 4. Mark as Delivered (Only when Out for Delivery) - এটি নতুন যোগ করা হয়েছে #}
+            {% if sales_order.status == 'out_for_delivery' %}
+                <form action="{% url 'sales:update_sales_order_status' sales_order.pk %}" method="POST" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="delivered">
+                    <button type="submit" class="btn btn-dark btn-sm shadow-sm me-2" onclick="return confirm('Confirm delivery to customer?');">
+                        <i class="fas fa-box-open"></i> Mark as Delivered
+                    </button>
+                </form>
+            {% endif %}
+
+            {# Export PDF #}
+            <a href="{% url 'sales:export_sales_order_pdf' sales_order.pk %}" class="btn btn-secondary btn-sm shadow-sm">
+                <i class="fas fa-file-pdf"></i> PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Order Info</h6></div>
+                <div class="card-body">
+                    <p><strong>Customer:</strong> {{ sales_order.customer.name }}</p>
+                    <p><strong>Status:</strong> <span class="badge bg-primary">{{ sales_order.get_status_display }}</span></p>
+                    <p><strong>Payment:</strong> <span class="badge bg-info">{{ sales_order.get_payment_status_display }}</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Order Items</h6></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Ordered</th>
+                            <th class="text-center">Fulfilled</th>
+                            <th class="text-end">Unit Price</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in sales_order.items.all %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-center">
+                                <span class="{% if item.quantity_fulfilled < item.quantity %}text-danger{% else %}text-success{% endif %}">
+                                    {{ item.quantity_fulfilled }}
+                                </span>
+                            </td>
+                            <td class="text-end">{{ DEFAULT_CURRENCY_SYMBOL }}{{ item.unit_price }}</td>
+                            <td class="text-end">{{ DEFAULT_CURRENCY_SYMBOL }}{{ item.subtotal }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold text-muted">Subtotal (Approx)</td>
+                            <td class="text-end text-muted">
+                                {{ DEFAULT_CURRENCY_SYMBOL }}
+                                {# Simple math in template isn't easy, usually passed from view or model property #}
+                                {# Assuming user wants to see the breakdown fields we added #}
+                                {{ sales_order.total_amount|add:sales_order.discount|add:sales_order.round_off_amount|add:"-"|add:sales_order.tax_amount|add:"-"|add:sales_order.shipping_cost|floatformat:2 }}
+                            </td>
+                        </tr>
+                        
+                        {% if sales_order.tax_amount > 0 %}
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold text-muted">Tax (+)</td>
+                            <td class="text-end text-muted">{{ DEFAULT_CURRENCY_SYMBOL }}{{ sales_order.tax_amount }}</td>
+                        </tr>
+                        {% endif %}
+
+                        {% if sales_order.shipping_cost > 0 %}
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold text-muted">Shipping (+)</td>
+                            <td class="text-end text-muted">{{ DEFAULT_CURRENCY_SYMBOL }}{{ sales_order.shipping_cost }}</td>
+                        </tr>
+                        {% endif %}
+
+                        {% if sales_order.discount > 0 %}
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold text-muted">Discount (-)</td>
+                            <td class="text-end text-muted">{{ DEFAULT_CURRENCY_SYMBOL }}{{ sales_order.discount }}</td>
+                        </tr>
+                        {% endif %}
+
+                        {% if sales_order.round_off_amount > 0 %}
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold text-muted">Round Off (-)</td>
+                            <td class="text-end text-muted">{{ DEFAULT_CURRENCY_SYMBOL }}{{ sales_order.round_off_amount }}</td>
+                        </tr>
+                        {% endif %}
+
+                        <tr class="table-light fs-5">
+                            <td colspan="4" class="text-end fw-bold">Grand Total</td>
+                            <td class="text-end fw-bold text-primary">{{ DEFAULT_CURRENCY_SYMBOL }}{{ sales_order.total_amount }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+{% include 'sales/partials/payment_modal.html' %} 
+{% endblock %}

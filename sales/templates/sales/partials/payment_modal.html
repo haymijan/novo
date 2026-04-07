@@ -1,0 +1,37 @@
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Record Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'sales:add_payment_to_order' sales_order.pk %}" method="POST">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <select name="payment_method" class="form-select" required>
+                            <option value="">-- Select Method --</option>
+                            {% for method in payment_methods %}
+                                <option value="{{ method.id }}">{{ method.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Amount</label>
+                        <input type="number" name="amount" class="form-control" step="0.01" required placeholder="Enter amount" value="{{ sales_order.total_amount|floatformat:2 }}">
+                        <div class="form-text">Total Due: {{ sales_order.total_amount }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reference / Note</label>
+                        <input type="text" name="reference" class="form-control" placeholder="Cheque No / Transaction ID">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

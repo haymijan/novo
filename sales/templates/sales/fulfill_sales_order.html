@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'sales:sales_order_detail' sales_order.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Order
+        </a>
+    </div>
+
+    <div class="alert alert-info shadow-sm" role="alert">
+        <h4 class="alert-heading"><i class="fas fa-truck-loading"></i> Create Shipment</h4>
+        <p>This action will deduct stock from <strong>{{ sales_order.warehouse.name }}</strong> and generate a shipment record.</p>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Items to Fulfill</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th class="text-center">Ordered</th>
+                            <th class="text-center">Already Shipped</th>
+                            <th class="text-center">Remaining to Ship</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in sales_order.items.all %}
+                            {% if item.quantity > item.quantity_fulfilled %}
+                            <tr>
+                                <td>
+                                    {{ item.product.name }}
+                                    <div class="small text-muted">Tracking: {{ item.product.get_tracking_method_display }}</div>
+                                </td>
+                                <td class="text-center">{{ item.quantity }}</td>
+                                <td class="text-center">{{ item.quantity_fulfilled }}</td>
+                                <td class="text-center font-weight-bold text-success">
+                                    {{ item.quantity|add:"-"|add:item.quantity_fulfilled }}
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card-footer bg-white">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tracking Number / Courier Ref</label>
+                        <input type="text" name="tracking_number" class="form-control" placeholder="e.g. DHL-123456789">
+                        <div class="form-text">Optional but recommended for delivery tracking.</div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <a href="{% url 'sales:sales_order_detail' sales_order.pk %}" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="fas fa-check-circle me-1"></i> Confirm Shipment & Deduct Stock
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
