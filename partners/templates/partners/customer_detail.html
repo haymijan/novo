@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'partners:customer_list' %}" class="btn btn-secondary btn-sm shadow-sm">
+            <i class="fas fa-arrow-left fa-sm me-1"></i> Back to List
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
+                    <h4 class="font-weight-bold text-primary mb-2">{{ customer.name }}</h4>
+                    <div class="text-muted">
+                        <p class="mb-1"><i class="fas fa-map-marker-alt me-2 text-gray-400"></i>{{ customer.address|default:'Address Not Provided' }}</p>
+                        <p class="mb-1"><strong><i class="fas fa-phone me-2 text-gray-400"></i>Phone:</strong> {{ customer.phone|default:'N/A' }}</p>
+                        <p class="mb-0"><strong><i class="fas fa-envelope me-2 text-gray-400"></i>Email:</strong> {{ customer.email|default:'N/A' }}</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 col-md-12">
+                    <div class="row g-2 justify-content-lg-end">
+                        <div class="col-md-6 col-12">
+                            <div class="p-3 rounded border border-success bg-success-subtle h-100">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-uppercase small fw-bold text-success mb-1">Wallet Balance</div>
+                                        {# ব্যবহার করা হচ্ছে get_wallet_balance #}
+                                        <div class="h4 mb-0 fw-bold text-gray-800">{{ customer.get_wallet_balance|default:0|intcomma }} BDT</div>
+                                    </div>
+                                    <i class="fas fa-wallet fa-2x text-success opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-12">
+                            <div class="p-3 rounded border border-danger bg-danger-subtle h-100">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <div class="text-uppercase small fw-bold text-danger mb-1">Current Due</div>
+                                        {# ব্যবহার করা হচ্ছে get_current_due #}
+                                        <div class="h4 mb-0 fw-bold text-gray-800">{{ customer.get_current_due|default:0|intcomma }} BDT</div>
+                                    </div>
+                                    <i class="fas fa-exclamation-circle fa-2x text-danger opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header border-bottom-0">
+            <ul class="nav nav-tabs card-header-tabs" id="customerTab" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#unpaid" type="button">Unpaid Invoices</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders" type="button">Sales Orders</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#history" type="button">Invoice History</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#returns" type="button">Returns</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#giftcards" type="button">
+                        <i class="fas fa-gift text-info me-1"></i> Gift Cards
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body">
+            <div class="tab-content" id="customerTabContent">
+                
+                <div class="tab-pane fade show active" id="unpaid">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light"><tr><th>Invoice #</th><th>Date</th><th class="text-end">Total</th><th class="text-end">Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                {# customerinvoice_set ব্যবহার করে লুপ চালানো হচ্ছে #}
+                                {% for invoice in customer.customerinvoice_set.all %}
+                                    {% if invoice.status != 'Paid' %}
+                                    <tr>
+                                        <td><a href="#" class="text-decoration-none fw-bold">#{{ invoice.pk }}</a></td>
+                                        <td>{{ invoice.invoice_date|date:"d M, Y" }}</td>
+                                        <td class="text-end">{{ invoice.total_amount|intcomma }}</td>
+                                        <td class="text-end"><span class="badge bg-danger">Unpaid</span></td>
+                                        <td><a href="#" class="btn btn-sm btn-primary">Add Payment</a></td>
+                                    </tr>
+                                    {% endif %}
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No unpaid invoices found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="orders">
+                    <div class="d-flex justify-content-end mb-2">
+                         <a href="{% url 'sales:create_sales_order' %}?customer={{ customer.id }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i> New Sales Order
+                        </a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light"><tr><th>Order #</th><th>Date</th><th class="text-end">Amount</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody>
+                                {# salesorder_set ব্যবহার করা হচ্ছে #}
+                                {% for order in customer.salesorder_set.all|dictsortreversed:"created_at" %}
+                                <tr>
+                                    <td><a href="{% url 'sales:sales_order_detail' order.pk %}" class="text-decoration-none fw-bold">SO-{{ order.sales_order_number|default:order.id }}</a></td>
+                                    <td>{{ order.order_date|date:"d M, Y" }}</td>
+                                    <td class="text-end fw-bold">{{ order.total_amount|intcomma }}</td>
+                                    <td><span class="badge bg-secondary">{{ order.get_status_display }}</span></td>
+                                    <td><a href="{% url 'sales:sales_order_detail' order.pk %}" class="btn btn-sm btn-info text-white"><i class="fas fa-eye"></i></a></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-center py-4 text-muted">No sales orders found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="history">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light"><tr><th>Invoice #</th><th>Date</th><th class="text-end">Total</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {% for invoice in customer.customerinvoice_set.all|dictsortreversed:"created_at" %}
+                                <tr>
+                                    <td><a href="#" class="fw-bold">#{{ invoice.pk }}</a></td>
+                                    <td>{{ invoice.invoice_date|date:"d M, Y" }}</td>
+                                    <td class="text-end">{{ invoice.total_amount|intcomma }}</td>
+                                    <td>
+                                        {% if invoice.status == 'Paid' %}<span class="badge bg-success">Paid</span>
+                                        {% elif invoice.status == 'Partially Paid' %}<span class="badge bg-warning text-dark">Partial</span>
+                                        {% else %}<span class="badge bg-danger">{{ invoice.status }}</span>{% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center py-4 text-muted">No invoice history.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="returns">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light"><tr><th>Date</th><th>SO #</th><th class="text-end">Amount</th><th>Status</th></tr></thead>
+                            <tbody>
+                                {# salesreturn.all ব্যবহার করা হচ্ছে #}
+                                {% for return_obj in customer.salesreturn.all %}
+                                <tr>
+                                    <td>{{ return_obj.return_date|date:"d M, Y" }}</td>
+                                    <td>{{ return_obj.sales_order.id }}</td>
+                                    <td class="text-end text-danger">{{ return_obj.total_refund_amount|intcomma }}</td>
+                                    <td><span class="badge bg-secondary">{{ return_obj.return_type }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center py-4 text-muted">No returns found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="giftcards">
+                    {# এখানে giftcard_set.all দিয়ে চেক করা হচ্ছে #}
+                    {% if customer.giftcard_set.all %}
+                        <div class="d-flex justify-content-end mb-2">
+                             <a href="{% url 'marketing:create_gift_card' %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus me-1"></i> Issue New Card
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Card Code</th>
+                                        <th class="text-end">Balance</th>
+                                        <th>Issue Date</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for card in customer.giftcard_set.all %}
+                                    <tr>
+                                        <td class="font-monospace fw-bold text-primary">{{ card.code }}</td>
+                                        <td class="text-end fw-bold text-success">{{ card.current_balance|intcomma }}</td>
+                                        <td>{{ card.created_at|date:"d M, Y" }}</td>
+                                        <td class="text-center">
+                                            {% if card.is_active and card.current_balance > 0 %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="{% url 'marketing:gift_card_detail' card.pk %}" class="btn btn-sm btn-info text-white" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        {# যদি কোনো কার্ড না থাকে, তাহলে এই অংশ দেখাবে #}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-gift fa-3x mb-3 text-gray-300"></i>
+                            <p class="mb-2">No gift cards issued to this customer yet.</p>
+                            <a href="{% url 'marketing:create_gift_card' %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i> Issue New Gift Card
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

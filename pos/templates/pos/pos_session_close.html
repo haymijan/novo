@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4 text-gray-800">{{ title }}</h1>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Session Details</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4"><strong>Session:</strong> #{{ session.pk }}</div>
+                <div class="col-md-4"><strong>User:</strong> {{ session.user.username }}</div>
+                <div class="col-md-4"><strong>Register:</strong> {{ session.cash_register.name }}</div>
+                <div class="col-md-4"><strong>Warehouse:</strong> {{ session.cash_register.warehouse.name }}</div>
+                <div class="col-md-4"><strong>Start Time:</strong> {{ session.start_time|date:"d M Y, H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Reconciliation</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="reconciliation-form">
+                {% csrf_token %}
+                {{ formset.management_form }}
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Payment Method</th>
+                                <th class="text-end">Expected (System Total)</th>
+                                <th class="text-end" style="width: 200px;">Counted (Actual Amount)</th>
+                                <th class="text-end">Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for form in formset %}
+                                {{ form.payment_method_id.as_hidden }}
+                                {{ form.payment_method_name.as_hidden }}
+                                <tr class="payment-row">
+                                    <td>{{ form.payment_method_name.value }}</td>
+                                    <td class="text-end">{{ form.expected_amount.value|floatformat:2|intcomma }}</td>
+                                    <td>
+                                        {{ form.counted_amount }}
+                                        {% for error in form.counted_amount.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        <span class="difference-display">0.00</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="2" class="text-end fw-bold">Total Difference (Over/Short):</td>
+                                <td colspan="2" class="text-end fw-bold" id="total-difference">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <button type="submit" class="btn btn-success btn-lg">
+                    <i class="fas fa-check-circle me-1"></i> Confirm & Close Session
+                </button>
+                <a href="{% url 'pos:pos_session_list' %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    function updateTotals() {
+        let totalDifference = 0;
+        
+        $('.payment-row').each(function() {
+            const row = $(this);
+            // readonly ফিল্ড থেকে ভ্যালু নেওয়া
+            const expectedText = row.find('td').eq(1).text().replace(/,/g, '');
+            const expected = parseFloat(expectedText) || 0;
+            const counted = parseFloat(row.find('input[id$="-counted_amount"]').val()) || 0;
+            const difference = counted - expected;
+            
+            const diffDisplay = row.find('.difference-display');
+            diffDisplay.text(difference.toFixed(2));
+            
+            if (difference < 0) {
+                diffDisplay.removeClass('text-success').addClass('text-danger');
+            } else if (difference > 0) {
+                diffDisplay.removeClass('text-danger').addClass('text-success');
+            } else {
+                diffDisplay.removeClass('text-danger text-success');
+            }
+            
+            totalDifference += difference;
+        });
+        
+        $('#total-difference').text(totalDifference.toFixed(2));
+        $('#total-difference').removeClass('text-danger text-success');
+        
+        if (totalDifference != 0) {
+            $('#total-difference').addClass(totalDifference < 0 ? 'text-danger' : 'text-success');
+        }
+    }
+    
+    // পেজ লোড হলে প্রথমবার হিসাব করুন
+    updateTotals();
+    
+    // ব্যবহারকারী নতুন অ্যামাউন্ট টাইপ করলে আবার হিসাব করুন
+    $('#reconciliation-form').on('input', 'input[id$="-counted_amount"]', updateTotals);
+});
+</script>
+{% endblock %}

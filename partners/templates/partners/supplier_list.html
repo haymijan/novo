@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}
+  All Suppliers
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">All Suppliers</h6>
+            <a href="{% url 'partners:add_supplier' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus fa-sm me-1"></i> Add New Supplier
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" width="100%" cellspacing="0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Contact Person</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Address</th>
+                            <th>Created At</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'partners:supplier_detail' supplier.pk %}">{{ supplier.name }}</a>
+                            </td>
+                            <td>{{ supplier.contact_person|default:"N/A" }}</td>
+                            <td>{{ supplier.email|default:"N/A" }}</td>
+                            <td>{{ supplier.phone|default:"N/A" }}</td>
+                            <td>{{ supplier.address|truncatechars:40|default:"N/A" }}</td>
+                            <td>{{ supplier.created_at|date:"d M, Y" }}</td>
+                            <td class="text-center">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'partners:supplier_detail' supplier.pk %}" class="btn btn-info btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'partners:edit_supplier' supplier.pk %}" class="btn btn-warning btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'partners:delete_supplier' supplier.pk %}" class="btn btn-danger btn-sm" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5">
+                                <h5 class="text-muted">No suppliers found.</h5>
+                                <p>Click on the "Add New Supplier" button to get started.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

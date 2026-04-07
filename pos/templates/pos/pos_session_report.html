@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+        <a href="{% url 'pos:pos_session_list' %}" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Sessions
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Session Details</h6></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Session ID:</strong> {{ session.pk }}<br>
+                    <strong>User:</strong> {{ session.user.username }}<br>
+                    <strong>Register:</strong> {{ session.cash_register.name }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Start Time:</strong> {{ session.start_time|date:"d M Y, H:i" }}<br>
+                    <strong>End Time:</strong> {{ session.end_time|date:"d M Y, H:i" }}<br>
+                    <strong>Status:</strong> <span class="badge bg-{% if session.status == 'open' %}warning{% else %}success{% endif %}">{{ session.status|title }}</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Warehouse:</strong> {{ session.cash_register.warehouse.name|default:"N/A" }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Reconciliation Summary</h6></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Total Sales (After Discount):</td>
+                                <td class="text-end fw-bold">{{ DEFAULT_CURRENCY_SYMBOL }} {{ total_session_sales|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Discount Given:</td>
+                                <td class="text-end fw-bold text-danger">({{ total_session_discount|intcomma }})</td>
+                            </tr>
+                            <tr class="table-light">
+                                <td colspan="2" class="pt-3"><strong>Reconciliation Summary</strong></td>
+                            </tr>
+                            <tr>
+                                <td>System Expected (Payments):</td>
+                                <td class="text-end fw-bold">{{ DEFAULT_CURRENCY_SYMBOL }} {{ session.expected_balance|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Actually Counted:</td>
+                                <td class="text-end fw-bold">{{ DEFAULT_CURRENCY_SYMBOL }} {{ session.counted_balance|intcomma }}</td>
+                            </tr>
+                            <tr class="{% if session.difference > 0 %}table-success{% elif session.difference < 0 %}table-danger{% endif %}">
+                                <td>Difference (Over/Short):</td>
+                                <td class="text-end fw-bold">{{ DEFAULT_CURRENCY_SYMBOL }} {{ session.difference|intcomma }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <hr>
+                    <h6 class="m-0 font-weight-bold text-primary mb-2">Sales by Payment Method</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr><th>Payment Method</th><th class="text-end">Total Amount</th></tr>
+                            </thead>
+                            <tbody>
+                            {% for payment in payment_summary %}
+                                <tr>
+                                    <td>{{ payment.payment_method__name }}</td>
+                                    <td class="text-end">{{ DEFAULT_CURRENCY_SYMBOL }} {{ payment.total_amount|intcomma }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="2" class="text-center">No payments found.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Product Sales Summary</h6></div>
+                <div class="card-body">
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-center">Qty Sold</th>
+                                    <th class="text-end">Total Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {% for product in product_summary %}
+                                <tr>
+                                    <td>{{ product.product__name }}</td>
+                                    <td class="text-center">{{ product.total_qty|floatformat:0 }}</td>
+                                    <td class="text-end">{{ DEFAULT_CURRENCY_SYMBOL }} {{ product.total_value|intcomma }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-center">No products sold in this session.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

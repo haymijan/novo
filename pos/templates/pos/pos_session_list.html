@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ title }}</h1>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">All POS Sessions</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Cash Register</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for session in sessions %}
+                        <tr>
+                            <td>{{ session.user.username }}</td>
+                            <td>{{ session.cash_register.name }}</td>
+                            <td>{{ session.start_time|date:"d M Y, H:i" }}</td>
+                            <td>{{ session.end_time|date:"d M Y, H:i"|default:"--" }}</td>
+                            <td>
+                                {% if session.status == 'open' %}
+                                    <span class="badge bg-success">Open</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Closed</span>
+                                {% endif %}
+                            </td>
+                            
+                            <td class="text-center">
+                                {% if session.status == 'open' %}
+                                    <a href="{% url 'pos:pos_session_close' session.pk %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-tasks fa-sm"></i> Reconcile
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'pos:pos_session_report' session.pk %}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-chart-bar fa-sm"></i> View Report
+                                    </a>
+                                {% endif %}
+                            </td>
+                            </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No POS sessions found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
